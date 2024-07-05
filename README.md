@@ -121,11 +121,16 @@ jobs:
           publish_branch: bddreporte
           publish_dir: ./report/
 ```
-17. En la pagina de Sonar Source verificar el resultado del analisis.
+11. En el Visual Studio Code o en un terminal, subir o confirmar los cambios al repositorio.
+12. En el navegador de internet, en pagina Github del repositorio de su proyecto. En la sección Actions, se podra visualizar el siguiente resultado.
+![image](https://github.com/UPT-FAING-EPIS/lab_ci_pruebas_01/assets/10199939/a1534320-2438-4161-84ca-36143c045c53)
 
-![image](https://github.com/UPT-FAING-EPIS/lab_calidad_01/assets/10199939/4e4892d3-71e2-4437-9713-a270ebf61b06)
+13. En el navegador de internet, en la pagina de SonarCloud, en el nuevo proyecto creado se podra visualizar el resultado de la ejecución
+![image](https://github.com/UPT-FAING-EPIS/lab_ci_pruebas_01/assets/10199939/8ea2ac22-b40b-4067-9bf0-4b972a5eb313)
 
----
-## Actividades Encargadas
-1. Adicionar los escenarios, casos de prueba, metodos de prueba y modificaciones para verificar el método de crédito.
-2. Adjuntar la captura donde se evidencia el incremento del valor de cobertura en un archivo cobertura.png.
+14. En el navegador de internet, ingresar a la direcciòn generada en el paso 7, de Github Pages y se podrá visualizar el siguiente resultado:
+
+![image](https://github.com/UPT-FAING-EPIS/lab_ci_pruebas_01/assets/10199939/a4f9ad6e-6aa1-424b-a496-9a16cad2ac2d)
+
+![image](https://github.com/UPT-FAING-EPIS/lab_ci_pruebas_01/assets/10199939/33266cc0-98e6-4585-a863-8cefd2748dab)
+
