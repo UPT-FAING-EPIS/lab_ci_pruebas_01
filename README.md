@@ -50,122 +50,76 @@
 9. En el navegador de internet, en pagina Github del repositorio de su proyecto. En la pagina de Actions secrets / New Secret, en el nombre ingresar el valor SONAR_TOKEN y en secreto ingresar el valor del token de SonarCloud generado en el paso 2.
 ![image](https://github.com/UPT-FAING-EPIS/lab_ci_pruebas_01/assets/10199939/3320bc5c-32c8-4f4c-bbcb-5852909d522c)
 
+10. Abrir Visual Studio Code, cargar la carpeta del repositorio del proyecto. Seguidamente crear la carpeta `.github` y dentro de esta la carpeta `workflows`. Seguidamente crear el archivo ci.yml con el siguiente contenido
+```Yaml
+name: Tarea Automatizada de ejecución de pruebas
 
+env:
+  DOTNET_VERSION: '8.x'                     # la versión de .NET
+  SONAR_ORG: 'p-cuadros'                    # Nombre de la organización de sonar cloud
+  SONAR_PROJECT: 'p-cuadros_bancaapp'        # Key ID del proyecto de sonar
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-
-
-### Parte II: Creación de la aplicación
-1. Iniciar la aplicación Powershell o Windows Terminal en modo administrador 
-2. Ejecutar el siguiente comando para crear una nueva solución
-```
-dotnet new sln -o Bank
-```
-3. Acceder a la solución creada y ejecutar el siguiente comando para crear una nueva libreria de clases y adicionarla a la solución actual.
-```
-cd Bank
-dotnet new webapi -o Bank.WebApi
-dotnet sln add ./Bank.WebApi/Bank.WebApi.csproj
-```
-4. Ejecutar el siguiente comando para crear un nuevo proyecto de pruebas y adicionarla a la solución actual
-```
-dotnet new mstest -o Bank.WebApi.Tests
-dotnet sln add ./Bank.WebApi.Tests/Bank.WebApi.Tests.csproj
-dotnet add ./Bank.WebApi.Tests/Bank.WebApi.Tests.csproj reference ./Bank.WebApi/Bank.WebApi.csproj
-```
-5. Iniciar Visual Studio Code (VS Code) abriendo el folder de la solución como proyecto. En el proyecto Bank.Domain, si existe un archivo Class1.cs proceder a eliminarlo. Asimismo en el proyecto Bank.Domain.Tests si existiese un archivo UnitTest1.cs, también proceder a eliminarlo.
-
-6. En VS Code, en el proyecto Bank.WebApi proceder la carpeta `Models` y dentro de esta el archivo BankAccount.cs e introducir el siguiente código:
-```C#
-namespace Bank.WebApi.Models
-{
-    public class BankAccount
-    {
-        private readonly string m_customerName;
-        private double m_balance;
-        private BankAccount() { }
-        public BankAccount(string customerName, double balance)
-        {
-            m_customerName = customerName;
-            m_balance = balance;
-        }
-        public string CustomerName { get { return m_customerName; } }
-        public double Balance { get { return m_balance; }  }
-        public void Debit(double amount)
-        {
-            if (amount > m_balance)
-                throw new ArgumentOutOfRangeException("amount");
-            if (amount < 0)
-                throw new ArgumentOutOfRangeException("amount");
-            m_balance -= amount;
-        }
-        public void Credit(double amount)
-        {
-            if (amount < 0)
-                throw new ArgumentOutOfRangeException("amount");
-            m_balance += amount;
-        }
-    }
-}
-```
-7. Luego en el proyecto Bank.WepApi.Tests añadir un nuevo archivo BanckAccountTests.cs e introducir el siguiente código:
-```C#
-using Bank.WebApi.Models;
-using NUnit.Framework;
-
-namespace Bank.Domain.Tests
-{
-    public class BankAccountTests
-    {
-        [Test]
-        public void Debit_WithValidAmount_UpdatesBalance()
-        {
-            // Arrange
-            double beginningBalance = 11.99;
-            double debitAmount = 4.55;
-            double expected = 7.44;
-            BankAccount account = new BankAccount("Mr. Bryan Walton", beginningBalance);
-            // Act
-            account.Debit(debitAmount);
-            // Assert
-            double actual = account.Balance;
-            Assert.AreEqual(expected, actual, 0.001, "Account not debited correctly");
-        }
-    }
-}
-```
-8. En el terminal, ejecutar las pruebas de lo nostruiido hasta el momento:
-```Bash
-dotnet test --collect:"XPlat Code Coverage"
-```
-> Resultado
-```Bash
-Failed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: < 1 ms
-```
-9. En el terminal, instalar la herramienta de .Net Sonar Scanner que permitirá conectarse a SonarQube para realizar las pruebas estáticas de la seguridad del código de la aplicación :
-```Bash
-dotnet tool install -g dotnet-sonarscanner
-```
-> Resultado
-```Bash
-Puede invocar la herramienta con el comando siguiente: dotnet-sonarscanner
-La herramienta "dotnet-sonarscanner" (versión 'X.X.X') se instaló correctamente
-```
-10. En el terminal, ejecutar :
-```Bash
-dotnet sonarscanner begin /k:"apibank" /d:sonar.token="TOKEN" /d:sonar.host.url="https://sonarcloud.io" /o:"ORGANIZATION" /d:sonar.cs.opencover.reportsPaths="*/*/*/coverage.opencover.xml"
-```
-> Donde:
-> - TOKEN: es el token que previamente se genero en la pagina de Sonar Source
-> - ORGANIZATION: es el nombre de la organización generada en Sonar Source
-
-12. En el terminal, ejecutar:
-```Bash
-dotnet build --no-incremental
-dotnet test --collect:"XPlat Code Coverage;Format=opencover"
-```
-13. Ejecutar nuevamente el paso 8 para lo cual se obtendra una respuesta similar a la siguiente:
-```
-dotnet sonarscanner end /d:sonar.token="TOKEN"
+jobs:
+  coverage:
+    name: CoverageReport
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurando la versión de NET
+        uses: actions/setup-dotnet@v4
+        with:
+          java-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Configurando la versión de NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restaurar los paquetes
+        run: dotnet restore 
+      - name: Ejecutar pruebas
+        run: dotnet test --collect:"XPlat Code Coverage"
+      - name: ReportGenerator
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.3.7
+        with:
+          reports: ./*/*/*/coverage.cobertura.xml
+          targetdir: coveragereport
+          reporttypes: MarkdownSummary;MarkdownAssembliesSummary;MarkdownSummaryGithub
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoverageReport 
+          path: coveragereport 
+      - name: Publish coverage in build summary # 
+        run: cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY 
+        shell: bash
+      - name: Instalar Scanner
+        run: dotnet tool install -g dotnet-sonarscanner
+      - name: Ejecutar escaneo
+        run: | 
+          dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet build
+          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+      - name: Install Living Doc
+        run: dotnet tool install -g SpecFlow.Plus.LivingDoc.CLI
+      - name: Generate living doc
+        run: livingdoc test-assembly ./Bank.Domain.Tests/bin/Debug/net8.0/Bank.Domain.Tests.dll -t ./Bank.Domain.Tests/bin/Debug/net8.0/TestExecution.json -o ./report/index.html
+      - uses: actions/upload-artifact@v3
+        with:
+          name: specflow
+          path: report
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: bddreporte
+          publish_dir: ./report/
 ```
 17. En la pagina de Sonar Source verificar el resultado del analisis.
 
